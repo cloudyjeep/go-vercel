@@ -44,12 +44,11 @@ func main() {
 	})
 
 	router.POST("/items", func(c *gin.Context) {
-		newItem := Item{}
+		var newItem Item
 		if err := c.ShouldBindJSON(&newItem); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		addNewId(db, &newItem)
 		if err := createItem(db, newItem); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -79,11 +78,11 @@ func main() {
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "Item deleted"})
 	})
-
+ 
 	router.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "succesfully running...")
+		c.JSON(http.StatusOK, gin.H{"message": "Success"  }) 
 	})
-
+ 
 	// Run the server
 	router.Run(":8080")
 }
@@ -101,18 +100,6 @@ func createTable(db *sql.DB) {
 	statement.Exec()
 }
 
-func addNewId(db *sql.DB, item *Item) {
-	rows, err := db.Query("SELECT count(*) FROM items")
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			rows.Scan(&item.ID)
-			item.ID += 1
-			return
-		}
-	}
-}
-
 func getItems(db *sql.DB) ([]Item, error) {
 	rows, err := db.Query("SELECT id, name, price FROM items")
 	if err != nil {
@@ -120,11 +107,11 @@ func getItems(db *sql.DB) ([]Item, error) {
 	}
 	defer rows.Close()
 
-	items := []Item{}
+	var items []Item
 	for rows.Next() {
 		var item Item
 		if err := rows.Scan(&item.ID, &item.Name, &item.Price); err != nil {
-			// return nil, err
+			return nil, err
 		}
 		items = append(items, item)
 	}
